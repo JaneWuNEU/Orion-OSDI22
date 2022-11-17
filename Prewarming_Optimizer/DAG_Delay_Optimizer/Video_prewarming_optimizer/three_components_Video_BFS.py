@@ -2,6 +2,11 @@ import random
 import math
 
 def getE2EandUtilDist(d_s:int, d3_s: int):
+	"""
+	这些metric的含义是什么？
+	d_s:
+	d3_s:
+	"""
 	d_ms = d_s * 1000
 	d3 = d3_s * 1000
 	n = 10000

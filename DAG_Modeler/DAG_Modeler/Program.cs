@@ -35,10 +35,11 @@ namespace DAG_Modeler
             Start_Model_ChatBot(latency_percentile, latency_target);
 
         }
-
+        /// This function depends on the BFS to obtain the latency distribution for each stage under different VM sizes
         static void Start_Model_Video(double latency_percentile, double latency_target)
         {
-            Dictionary<string, Stage> all_train_stages_data = null;
+            // both latency_percentile and latency_target defines the SLOs for the application
+            Dictionary<string, Stage> all_train_stages_data = null; // divide the dataset
             Dictionary<string, Stage> all_validate_stages_data = null;
             Dictionary<string, Stage> all_test_stages_data = null;
 
@@ -47,7 +48,8 @@ namespace DAG_Modeler
 
             all_train_stages_data = Data_Loader.load_stages_no_wait_for_max_Video("Video_Analytics_Data/", false, false);
             
-            // Intial state
+            // Initial state for each stage
+
             int split_min_memory = 1000;
             int extract_min_memory = 1000;
             int classify_min_memory = 1000;

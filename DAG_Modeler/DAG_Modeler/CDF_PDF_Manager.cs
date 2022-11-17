@@ -3,14 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+/**
+1.X_source, as the function parameters  for both Get_Conditional_CDF_with_Interpolation and Get_E2E_CDF_*, represent the
+ the VM sizes for specific stages
+2.
+*/
 namespace DAG_Modeler
 {
     class CDF_PDF_Manager
     {
         private static CDF Get_Conditional_CDF_with_Interpolation(Dictionary<string, Stage> all_train_stages_data, string stage_name, int classify_source)
         {
-            long classify_extract_joint_key = long.Parse(classify_source.ToString() + classify_source.ToString());
+           // classify source is not restricted to the resource for stage classify,
+           // but are generalized to the VM sizes set for different stages with various applications
+            long classify_extract_joint_key = long.Parse(classify_source.ToString() + classify_source.ToString()); //get the stag
 
             if (classify_source == 576)
                 classify_extract_joint_key = long.Parse("192" + classify_source.ToString());
@@ -23,11 +29,12 @@ namespace DAG_Modeler
             else
             {
                 List<long> profiled_resources = all_train_stages_data[stage_name].Stage_Conditional_CDF.Keys.ToList().OrderBy(x => x).ToList();
+                // the VM sizes that have been profiled
                 for (int i = 0; i < profiled_resources.Count - 1; i++)
                 {
                     if (classify_extract_joint_key > profiled_resources[i] && classify_extract_joint_key < profiled_resources[i + 1])
                     {
-                        PDF pdf1 = all_train_stages_data[stage_name].Stage_PDF[profiled_resources[i]];
+                        PDF pdf1 = all_train_stages_data[stage_name].Stage_PDF[profiled_resources[i]]; // get the pdf
                         PDF pdf2 = all_train_stages_data[stage_name].Stage_PDF[profiled_resources[i + 1]];
 
 
@@ -41,7 +48,7 @@ namespace DAG_Modeler
                         double weight1 = Math.Round(((double)(classify_extract_joint_key_classify - cdf1_classify)) / (cdf2_classify - cdf1_classify), 2);
                         double weight2 = 1 - weight1;
 
-                        CDF interpolation = CDF_PDF_Manager.get_interpolation_CDF(cdf1, cdf2, weight1, weight2);
+                        CDF interpolation = CDF_PDF_Manager.get_interpolation_CDF(cdf1, cdf2, weight1, weight2); // cdf2 have larger VM sizes than cdf1
                         return interpolation;
                     }
                 }
@@ -299,7 +306,6 @@ namespace DAG_Modeler
                     Y += step;
                 }
             }
-
             return returned_CDF;
         }
         public static CDF get_max_joint_CDF(CDF input_CDF, int N, CDF joint_CDF)
@@ -489,26 +495,29 @@ namespace DAG_Modeler
             List<List<double>> all_workers_latencies = new List<List<double>>();
             for (int i = 0; i < 6; i++)
             {
-                all_workers_latencies.Add(new List<double>());
+                all_workers_latencies.Add(new List<double>());//the i chunks of all the videos
             }
             double min_latency = double.MaxValue;
             double max_latency = double.MinValue;
             Dictionary<int, int> visited_keys = new Dictionary<int, int>();
 
+            /// map the chunks of each video onto to the created worker
+            /// worker j only processes chunk j from different videos
             foreach (string s in keys)
             {
-                int i = Int32.Parse(s.Split('_')[0]);
+                int i = Int32.Parse(s.Split('_')[0]); //video_index
                 if (visited_keys.ContainsKey(i))
                     continue;
 
                 visited_keys.Add(i, i);
-                for (int j = 0; j < 6; j++)
+                for (int j = 0; j < 6; j++) // Only the first six chunks are focused here, out of the 30 video chunks.
+                 // The six chunks are processed by six workers independently.
                 {
                     double value = 0;
                     if (stage.ContainsKey(i + "_" + j))
                     {
                         value = stage[i + "_" + j];
-                        all_workers_latencies[j].Add(stage[i + "_" + j]);
+                        all_workers_latencies[j].Add(stage[i + "_" + j]); //
                     }
                     else
                     {
@@ -534,7 +543,7 @@ namespace DAG_Modeler
             }
 
             double start = min_latency;
-            double step = (max_latency - min_latency) / 100;
+            double step = (max_latency - min_latency) / 100; // divide the whole timeline into 100 intervals
             bool allow_once = true;
             while (start <= max_latency)
             {
@@ -542,14 +551,15 @@ namespace DAG_Modeler
                 double greater_than = 0;
                 for (int i = 0; i < 6; i++)
                 {
-                    List<double> currentWorker = all_workers_latencies[i];
+                    List<double> currentWorker = all_workers_latencies[i]; //get the i_th worker
                     for (int j = 0; j < currentWorker.Count; j++)
                     {
-                        if (currentWorker[j] <= start)
+                        //iterate all the chunks represented as j
+                        if (currentWorker[j] <= start) //figure out all the chunks processed by worker i with lower latency than $start
                         {
                             for (int k = 0; k < 6; k++)
                             {
-                                if (all_workers_latencies[k][j] <= start)
+                                if (all_workers_latencies[k][j] <= start)// find out other workers than also processes the j video with
                                 {
                                     less_than++;
                                 }

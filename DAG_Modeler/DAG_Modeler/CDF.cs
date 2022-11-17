@@ -10,8 +10,9 @@ namespace DAG_Modeler
     {
         List<double> percentiles = new List<double>();
         List<double> values = new List<double>();
-
+        //store frequency/probability of each latency interval
         public List<double> Percentiles { get => percentiles; set => percentiles = value; }
+        // the right boundary (endpoints) of each interval
         public List<double> Values { get => values; set => values = value; }
     }
     public class PDF
@@ -25,6 +26,7 @@ namespace DAG_Modeler
         }
         public PDF(List<double> latency_measures)
         {
+            // get the cdf of the latency_measures
             latency_measures.Sort();
             double min_latency = latency_measures.Min();
             double max_latency = latency_measures.Max();

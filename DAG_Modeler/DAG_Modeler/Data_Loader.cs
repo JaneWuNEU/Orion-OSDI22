@@ -146,6 +146,7 @@ namespace DAG_Modeler
                     int extract_value = 0;
                     int classify_value = 0;
                     int E2E_value = 0;
+                    //E2E:61357 Classify:52848 Shuffle:47 Extract:1136 Split:2678 E2E:61357
                     string[] parts = line.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
 
                     foreach (string p in parts)
@@ -180,7 +181,7 @@ namespace DAG_Modeler
                         classify.Add(video_index + "_" + video_chunk, classify_value);
                         extract_classify.Add(video_index + "_" + video_chunk, (extract_value + classify_value));
                         split_extract_classify.Add(video_index + "_" + video_chunk, (split_value + extract_value + classify_value));
-                    }
+                    }// synthetize the runtimes data
                 }
                 if (!test)
                 {
@@ -226,7 +227,7 @@ namespace DAG_Modeler
            
             foreach (Stage s in allStages.Values)
             {
-                s.fill_PDF_CDF();
+                s.fill_PDF_CDF(); //PDF and CDF under different resource configurations
                 s.extractMeanStd();
             }
             return allStages;

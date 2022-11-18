@@ -1,0 +1,78 @@
+input: latency_measures
+output: percentages, values
+def latency_distri(latency_measures)
+	lat_min, lat_max = min(latency_measures), max(latency_measures)
+	start, end = lat_min, lat_min+10
+	index, counts = 0,0
+	percentages, values = [],[]
+	while(index <len(latency_measures))
+		if (latency_measures[index]>=start && 
+			latency_measures[index]<=end)
+			counts++, index++
+		else:
+			percentages.add(counts/len(latency_measures))
+			counts = 0
+			start += 10,end += 10;
+			if (end > lat_max)
+			   values.add(lat_max);
+			else:
+			   values.add(end)
+	return  percentages, values
+	
+input: stage_latency_measures=> latency of all workers allocated to the stage
+output：percentages, values
+def conditional_latency_distri(stage_latency_measures):
+	// 1. get the lat_min and lat_max of all the workers
+	lat_min, lat_max = min(stage_latency_measures), max(stage_latency_measures)
+	start = lat_min, step = (lat_max - lat_min) / 100 // set 100 buckets
+	allow_once = True
+	percentages, values = [],[]
+	while(start<=lat_max)
+		less_than, greater_than = 0,0
+		// iterate all the workers to figure out the cases(frequency or moments) 
+		//that all workers have ower latency than $start
+		for(i=0;i<6;i++)
+			current_worker = stage_latency_measures[i]
+			for(j=0;j<current_worker.counts;j++)
+			   // all queries processed by current_worker
+				if (current_worker[j]<=start)
+					for(i=0;k<6;k++)
+						if (stage_latency_measures[k][j]<=start)
+							less_than++
+						else
+							greater_than ++
+		if (greater_than+less_than)>0:
+			values.add(start)
+			percentages.add(less_than/(less_than+greater_than)
+		start += step;
+		if (allow_once == false)
+			break
+		if (start > lat_max)
+			start = lat_max
+			allow_once = false
+			
+input: stage_profile_distri, target_resource
+output: percentages,values
+def get_distri_under_resource(stage_profile_distri, target_resource):
+	profiled_resource  = stage_profile_distri.keys()
+	if target_resource in profiled_resource:
+		return stage_profile_distri[target_resource]
+	else:
+		for(i = 0;i<len(profiled_resource)-1;i++)
+			if target_resource > profiled_resource[i] && 
+				target_resource < profiled_resource[i+1]:
+				cdf1,cdf2 = stage_profile_distri[profiled_resource[i]],
+							stage_profile_distri[profiled_resource[i+1]]
+				weight1 = round((target_resource-profiled_resource[i])/ \\
+				(profiled_resource[i+1]-profiled_resource[i]))
+				weight2 = 1-weight1
+				percentages, values = [],[]
+				for (int j = 0; j < 100; j++)
+					percentages.add(j)
+					//figure out the percentages close to i
+                    index_cdf1 = get_nearest_index(cdf1, i);
+                    index_cdf2 = get_nearest_index(cdf2, i);
+                    weighted_average = cdf2[index_cdf2] + (weight2 *  \\
+									(cdf1[index_cdf1] - cdf2[index_cdf2]))
+					values.append(weighted_average)
+          

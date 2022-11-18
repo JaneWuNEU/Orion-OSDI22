@@ -29,8 +29,10 @@ def recursive_items(dictionary):
 
 
 def event_log_extract(events):
+	"""
+	Note both the DAG e2e and the execution latency of each function are recorded in the returned function_durations_by_name
+	"""
 	function_durations_by_name = {}
-	#print(events)
 	events_id_dict = {}
 	#print("num of events:" + str(len(events)))
 	for event in events:
@@ -75,7 +77,7 @@ def main():
 		 print("Please enter the number of profiling runs as the second argument")
 		 return
 
-	#Example usage:  StepFunctionsStateMachine(stepFunctions_client, "arn:aws:XXXXXXXXXXXX")
+	# Example usage:  StepFunctionsStateMachine(stepFunctions_client, "arn:aws:XXXXXXXXXXXX")
 	DAG_arn = args[0]
 	Num_of_runs = int(args[1])
 	step_controler = StepFunctionsStateMachine(stepFunctions_client, DAG_arn)
@@ -93,7 +95,7 @@ def main():
 	j_def = json.loads(describe_out['definition'])
 	describe_out_unrolled = recursive_items(j_def)
 	function_arns = []
-	for key, value in describe_out_unrolled:
+	for key, value in describe_out_unrolled: # get the resource allocated to each function of the DAG
 		if(key == "Resource"):
 			#print(key, value)
 			function_arns.append(value)
@@ -116,24 +118,26 @@ def main():
 			memSize = min(mem * bundle, 10240) 
 			runtimes_by_name = {} # dictionary to save the runtimes of each function by name. Function_name -> List of runtimes
 			# change the memory sizes for all functions in the DAG
-			for func in function_arns:
+			for func in function_arns: # all the functions are configured with the same memsize, decided by bundle sizes
 				response = lambda_client.update_function_configuration(FunctionName=func, MemorySize=int(memSize))
 
 			time.sleep(5)
 
 			# load profiling runs' inputs from file
-			input_dict_list = []
+			input_dict_list = [] # prepare the input data
 			f = open("Video_Inputs.json", "r")
 			lines = f.readlines()
 			for l in lines:
 				j = json.loads(l)
-				j["DOP"] = str(int(30/bundle))
-				input_dict_list.append(j)
+				# all workers belonging to the stage are organized as bundles with the same size
+				# and then deployed on the VM with min(1472 * bundle_sizes, 10240)
+				j["DOP"] = str(int(30/bundle)) # why here is bundles, the chunks are grouped by bundles
+				input_dict_list.append(j) # the video is divided into int(30/bundle) chunks
 
 
 			# execute the DAG for Num_of_runs times
 			input_id = 0
-			for run_id in range(Num_of_runs):
+			for run_id in range(Num_of_runs): # profiling runs
 
 				letters = string.ascii_lowercase
 				run_hash = ''.join(random.choice(letters) for i in range(10))
@@ -147,6 +151,7 @@ def main():
 
 				run_succeeded = False
 				for i in range(200): # Busy loop until success or until 1000 seconds have elapsed
+					# prepare the runnable state machine
 					arn_describtion = step_controler.describe_execution(run_arn)
 					#print(arn_describtion)
 					#print("+++++++++++++++++++++++++++++++++++++++++++")

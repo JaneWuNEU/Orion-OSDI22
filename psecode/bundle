@@ -1,0 +1,26 @@
+input: input_list
+output: boundle_cost_dict,
+		boundle_e2e_dict
+def get_bundle_size():
+	mem = 1472 #MB
+	num_of_runs = 10
+	for bundle in [1,2,5,10]:
+		# 1. configure each function of the DAG 
+		# with the same memory size 
+		memSize = min(mem * bundle, 10240)
+		set_DAG_arn(memSize)
+		
+		# 2. profile execution time of each function
+		# within the DAG and the overall E2E
+		input_id = 0
+		e2e = []
+		for run_id in range(num_of_runs):
+			response = exec_DAG(input_list[input_id])
+			e2e.add(response['E2E'])
+		    input_id++
+		
+		# 3. evaluate the cost under the given bundle
+		boundle_cost_dict[bundle]= sum(e2e)* memSize \
+									* 0.0000166667 
+		boundle_e2e_dict[bundle]=e2e
+			

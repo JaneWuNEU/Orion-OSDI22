@@ -12,7 +12,7 @@ Data sample of the structure (width and depth) of DAGs. The data is aggregated e
 <br/>**File:** dag_structure.xls 
 
 ### Intermediate data
-Data sample of the intermediate data size passed accross the entire DAG. The data is aggregated by *data size passed (in bytes)*. The data was collected from 10/18/2021 to 10/31/2021.
+Data sample of the intermediate data size passed across the entire DAG. The data is aggregated by *data size passed (in bytes)*. The data was collected from 10/18/2021 to 10/31/2021.
 <br/>**File:** dag_intermediate-date.xls 
 
  | Tab | Description |

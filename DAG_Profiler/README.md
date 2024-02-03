@@ -11,9 +11,9 @@
 Usage
 
 # For Video Analytics:
-```
+``````
 python3 Latency_collect_Standard.py <Video_StateMachine_ARN> <Number of profiling runs> Video_Inputs.json
-```
+
 
 # For ML Pipeline:
 ```

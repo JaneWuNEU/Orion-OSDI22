@@ -106,7 +106,8 @@ namespace DAG_Modeler
             }
             return allStages;
         }
-        public static Dictionary<string, Stage> load_stages_no_wait_for_max_Video(string path = "Sampled_Data", bool test = false, bool add_layer = false, bool add_synthetic_classify = false, int synthetic_classify = 0)
+        public static Dictionary<string, Stage> load_stages_no_wait_for_max_Video(string path = "Sampled_Data", bool test = false, bool add_layer = false, 
+            bool add_synthetic_classify = false, int synthetic_classify = 0,double speed_ratio = 1)
         {
             Dictionary<string, Stage> allStages = new Dictionary<string, Stage>();
             allStages.Add("Split", new Stage() { Name = "Split" });
@@ -162,7 +163,7 @@ namespace DAG_Modeler
                         }
                         else if (sub_parts[0] == "Classify")
                         {
-                            classify_value = Int32.Parse(sub_parts[1]);
+                            classify_value = Convert.ToInt32(Int32.Parse(sub_parts[1])*speed_ratio);
                         }
                         else if (sub_parts[0] == "E2E")
                         {
@@ -191,7 +192,7 @@ namespace DAG_Modeler
                     //double classify_interworker_nmi = get_NMI_between_workers(classify, "calssify");
 
                     //double extract_classify_interworker_correl = get_correlation_between_workers(extract_classify);
-                   
+                    /** */
                     if (!allStages["Split"].Resource_to_latency_list.ContainsKey(Int32.Parse(resrouces[1])))
                     {
                         allStages["Split"].Resource_to_latency_list.Add(Int32.Parse(resrouces[1]), split.Values.ToList());
@@ -210,15 +211,17 @@ namespace DAG_Modeler
                         allStages["Classify"].Resource_to_latency_list.Add(Int32.Parse(resrouces[3]), combined_sharpen_classify);
                         allStages["Classify"].Stage_Conditional_CDF.Add(long.Parse(resrouces[3]), CDF_PDF_Manager.get_conditional_cdf(classify));
                     }
-
+                    
                     if (!allStages["Extract_Classify_Frame"].Resource_to_latency_list.ContainsKey(Int32.Parse((resrouces[2] + resrouces[3]))))
                     {
                         allStages["Extract_Classify_Frame"].Resource_to_latency_list.Add(long.Parse(resrouces[2] + resrouces[3]), extract_classify.Values.ToList());
                         allStages["Extract_Classify_Frame"].Stage_Conditional_CDF.Add(long.Parse(resrouces[2] + resrouces[3]), CDF_PDF_Manager.get_conditional_cdf(extract_classify));
                     }
+                   
+
                     if (!allStages["Split_Extract_Classify_Frame"].Resource_to_latency_list.ContainsKey(long.Parse((resrouces[1] + resrouces[2] + resrouces[3]))))
                     {
-                        allStages["Split_Extract_Classify_Frame"].Resource_to_latency_list.Add(long.Parse(resrouces[1] + resrouces[2] + resrouces[3]), extract_classify.Values.ToList());
+                        allStages["Split_Extract_Classify_Frame"].Resource_to_latency_list.Add(long.Parse(resrouces[1] + resrouces[2] + resrouces[3]), split_extract_classify.Values.ToList());
                         allStages["Split_Extract_Classify_Frame"].Stage_Conditional_CDF.Add(long.Parse(resrouces[1] + resrouces[2] + resrouces[3]), CDF_PDF_Manager.get_conditional_cdf(split_extract_classify));
                     }
                 }

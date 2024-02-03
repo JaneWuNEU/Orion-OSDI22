@@ -40,6 +40,7 @@ namespace DAG_Modeler
 
             for (int i = 0; i < resource_to_latency_list.Count; i++)
             {
+
                 long key = resource_to_latency_list.ElementAt(i).Key;
                 stage_PDF.Add(key, new PDF(resource_to_latency_list.ElementAt(i).Value));
                 stage_CDF.Add(key, CDF_PDF_Manager.get_cdf(stage_PDF[key]));

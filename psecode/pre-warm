@@ -1,0 +1,43 @@
+inputs: F2_times, F3_times
+outputs: d2_curr,d3_curr #pre-warm delay for each stage
+def get_stage_delay():
+	d2_curr = 0  # pre-warm delay for stage two
+	d3_curr = 0  # pre-warm delay for stage three
+	v = 0
+	while (True):
+		v2 = round(getE2EandUtilDist(d2_curr + 0.1, d3_curr), 10)
+		v3 = round(getE2EandUtilDist(d2_curr, d3_curr + 0.1), 10)
+		if (v2 <= v and v3 <= v):
+			break
+		if (v2 > v3):
+			v = v2
+			d2_curr = d2_curr + 0.1
+		else:
+			v = v3
+			d3_curr = d3_curr + 0.1
+			
+def getE2EandUtilDist(d2,d3):
+	E2E_list,Util_list,Util_per_Sec = [],[],[]
+    Init_f2 = 350 # initialization delay for function 2
+    Init_f3 = 4615 # initialization delay for function 3
+    for i, f1 in enumerate(F1_times): # execution time of function 1
+        d = d_ms
+        if (d_ms > f1):
+            d = f1
+        f2,f3 = F2_times[i],F3_times[i]
+        f1_f2 = f2 + max(f1, d + Init_f2)
+        E2E = f3 + max(f1_f2, d3 + Init_f3)
+        E2E_list.append(E2E)
+        util = 0
+        if (f1 <= (d + Init_f2)):
+            util = 1
+        else:
+            util = 1 / (1 + ((f1 - (d + Init_f2)) / (f1 + Init_f2 + f2)) 
+	    + (f1_f2 - (d3 + Init_f3)) / (f1 + f2 + f3 + Init_f2 + Init_f3))
+        Util_list.append(util)
+        Util_per_Sec.append(util / E2E)
+    E2E_list.sort()
+    Util_per_Sec.sort()
+    Util_list.sort(reverse=True)  # For Util, the higher the better
+    return Util_per_Sec[int(n / 100 * 95)]
+

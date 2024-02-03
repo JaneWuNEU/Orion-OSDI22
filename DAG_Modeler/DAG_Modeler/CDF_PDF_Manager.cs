@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
+using DocumentFormat.OpenXml.Presentation;
 /**
 1.X_source, as the function parameters  for both Get_Conditional_CDF_with_Interpolation and Get_E2E_CDF_*, represent the
- the VM sizes for specific stages
+the VM sizes for specific stages
 2.
 */
 namespace DAG_Modeler
@@ -24,6 +26,7 @@ namespace DAG_Modeler
 
             if (all_train_stages_data[stage_name].Stage_Conditional_CDF.ContainsKey(classify_extract_joint_key))
             {
+                Console.WriteLine("have the conditional CDF, return directly", stage_name, classify_source);
                 return all_train_stages_data[stage_name].Stage_Conditional_CDF[classify_extract_joint_key];
             }
             else
@@ -36,7 +39,6 @@ namespace DAG_Modeler
                     {
                         PDF pdf1 = all_train_stages_data[stage_name].Stage_PDF[profiled_resources[i]]; // get the pdf
                         PDF pdf2 = all_train_stages_data[stage_name].Stage_PDF[profiled_resources[i + 1]];
-
 
                         CDF cdf1 = CDF_PDF_Manager.get_cdf(pdf1);
                         CDF cdf2 = CDF_PDF_Manager.get_cdf(pdf2);
@@ -55,15 +57,33 @@ namespace DAG_Modeler
             }
             return null;
         }
-
-        public static CDF Get_E2E_CDF_Video(int assume_independence, Dictionary<string, Stage> all_train_stages_data, int Split_source, int Extract_source, int Classify_source, int stage_depth = 3, bool add_synthetic_stages = false)
+        public static double Get_E2E_Single_Num_CDF_Video(int assume_independence, Dictionary<string, Stage> all_train_stages_data, int Split_source,
+    int Extract_source, int Classify_source, int stage_depth = 3, bool add_synthetic_stages = false, double speed_ratio = 1)
         {
+            // pure distribution, not conditional
+
+
+            PDF Split_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Split", Split_source);
+            PDF Extract_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Extract", Extract_source);
+            PDF Classify_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Classify", Classify_source);
+
+            CDF Split_CDF = CDF_PDF_Manager.get_cdf(Split_PDF);
+            CDF Extract_CDF = CDF_PDF_Manager.get_cdf(Extract_PDF);
+            CDF Classify_CDF = CDF_PDF_Manager.get_cdf(Classify_PDF);
+
+            return Split_CDF.Values[94] + Extract_CDF.Values[94] + Classify_CDF.Values[94];
+        }
+        public static CDF Get_E2E_CDF_Video(int assume_independence, Dictionary<string, Stage> all_train_stages_data, int Split_source, 
+            int Extract_source, int Classify_source, int stage_depth = 3, bool add_synthetic_stages = false, double speed_ratio=1)
+        {
+            // pure distribution, not conditional
+
+
             PDF Split_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Split", Split_source);
             PDF Extract_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Extract", Extract_source);
             PDF Classify_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Classify", Classify_source);
 
             //printCDFs(Split_PDF, Split_source, Extract_PDF, Extract_source, Classify_PDF, Classify_source, all_test_stages_data);
-
             PDF extract_classify_PDF = CDF_PDF_Manager.get_convolution_2_PDFs(Extract_PDF, Classify_PDF);
             if (add_synthetic_stages)
             {
@@ -71,12 +91,51 @@ namespace DAG_Modeler
                 {
                     extract_classify_PDF = CDF_PDF_Manager.get_convolution_2_PDFs(extract_classify_PDF, Classify_PDF);
                 }
-            }
-            CDF extract_classify_CDF = CDF_PDF_Manager.get_cdf(extract_classify_PDF);
+            }           
 
+            CDF extract_classify_CDF = CDF_PDF_Manager.get_cdf(extract_classify_PDF);
+            // save the CONV distribution
+            /**
+            string parent_path = "D:\\project\\Orion-OSDI22\\DAG_Modeler\\DAG_Modeler/speed=" + Convert.ToString(speed_ratio);
+            Directory.CreateDirectory(parent_path+"/conv_dis/");
+            string root_path = parent_path + "/conv_dis/Extract_Classify_Frame_conv_dis_" + Classify_source+".txt";
+           
+            using (StreamWriter sw = new StreamWriter(root_path))
+            {
+                for (int i = 0; i < extract_classify_CDF.Values.Count; i++)
+                    sw.WriteLine(extract_classify_CDF.Percentiles[i] + "#" + extract_classify_CDF.Values[i]);
+            }*/
+            
             CDF interpolation = Get_Conditional_CDF_with_Interpolation(all_train_stages_data, "Extract_Classify_Frame", Classify_source);
+            /**Directory.CreateDirectory(parent_path+"/con_dis/");
+            root_path = parent_path + "/con_dis/Extract_Classify_Frame_con_dis_" + Classify_source + ".txt";
+           
+            using (StreamWriter sw = new StreamWriter(root_path))
+            {
+                for (int i = 0; i < interpolation.Values.Count; i++)
+                    sw.WriteLine(interpolation.Percentiles[i] + "#" + interpolation.Values[i]);
+            }*/
+
 
             CDF Max_joint_CDF = CDF_PDF_Manager.get_max_joint_CDF(extract_classify_CDF, 1, interpolation);
+            /**Directory.CreateDirectory(parent_path+ "/final_dis/");
+            root_path = parent_path + "/final_dis/Extract_Classify_Frame_final_dis_" + Classify_source + ".txt";
+            
+            using (StreamWriter sw = new StreamWriter(root_path))
+            {
+                for (int i = 0; i < Max_joint_CDF.Values.Count; i++)
+                    sw.WriteLine(Max_joint_CDF.Percentiles[i] + "#" + Max_joint_CDF.Values[i]);
+            }
+            
+            Directory.CreateDirectory(parent_path + "/real_dis/");
+            root_path = parent_path + "/real_dis/Extract_Classify_Frame_real_dis_" + Classify_source + ".txt";
+
+            using (StreamWriter sw = new StreamWriter(root_path))
+            {
+                for (int i = 0; i < Ex_Cls_CDF.Values.Count; i++)
+                    sw.WriteLine(Ex_Cls_CDF.Percentiles[i] + "#" + Ex_Cls_CDF.Values[i]);
+            }*/
+
 
             PDF Max_PDF = null;
             if (assume_independence == 1)
@@ -95,9 +154,32 @@ namespace DAG_Modeler
             {
                 E2E_PDF = CDF_PDF_Manager.get_convolution_2_PDFs(Split_PDF, Max_PDF);
             }
-            CDF E2E_CDF = CDF_PDF_Manager.get_cdf(E2E_PDF);
+            CDF E2E_CDF = CDF_PDF_Manager.get_cdf(E2E_PDF); 
             return E2E_CDF;
         }
+
+        public static CDF Get_E2E_Real_CDF_Video(int assume_independence, Dictionary<string, Stage> all_train_stages_data, int Split_source,
+    int Extract_source, int Classify_source, int stage_depth = 3, bool add_synthetic_stages = false, double speed_ratio = 1)
+        {
+            // pure distribution, not conditional
+
+
+            //PDF Split_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Split", Split_source);
+            PDF Ex_Cls_PDF = Get_Component_PDF_with_Interpolation(all_train_stages_data, "Split_Extract_Classify_Frame",
+                long.Parse(Convert.ToString(Extract_source) + Convert.ToString(Classify_source) + Convert.ToString(Classify_source)));
+
+            /**
+            PDF E2E_PDF = CDF_PDF_Manager.get_convolution_2_PDFs(Split_PDF, Ex_Cls_PDF);
+            for (int i = 3; i < stage_depth; i++)
+            {
+                E2E_PDF = CDF_PDF_Manager.get_convolution_2_PDFs(Split_PDF, Ex_Cls_PDF);
+            }
+            */
+            CDF E2E_CDF = CDF_PDF_Manager.get_cdf(Ex_Cls_PDF);
+            return  E2E_CDF;
+        }
+
+
 
         public static CDF Get_E2E_CDF_ML(Dictionary<string, Stage> all_train_stages_data, int pca_source, int train_source, int combine_source, int N_parallel = 10)
         {
@@ -208,6 +290,7 @@ namespace DAG_Modeler
                     if ((sum_probabilties * 100) >= (percentile - 0.0000000001))
                     {
                         returned_CDF.Values.Add(input_pdf.Values[i]);
+
                         break;
                     }
                 }
@@ -229,7 +312,7 @@ namespace DAG_Modeler
         public static PDF get_convolution_2_PDFs(PDF compPDF_1, PDF compPDF_2)
         {
             PDF returned_PDF = new PDF();
-
+            //Console.WriteLine(compPDF_1.Values[0] + "_" + compPDF_2.Values[0]);
             double min_latency = compPDF_1.Values[0] + compPDF_2.Values[0]; // index 0 is min latency (assuming sorted)
             double max_latency = compPDF_1.Values[compPDF_1.Values.Count - 1] + compPDF_2.Values[compPDF_2.Values.Count - 1];
 
@@ -335,7 +418,7 @@ namespace DAG_Modeler
 
                 returned_CDF.Values.Add(latency);
                 last_latency = latency;
-                double max_probabiltiy = component_probabiltiy * joint_probability * 100;
+                double max_probabiltiy = component_probabiltiy * joint_probability * 100; // joint_probability和component_probabiltiy有一个一直是1
                 returned_CDF.Percentiles.Add(max_probabiltiy);
             }
             double last_max_probability = returned_CDF.Percentiles[returned_CDF.Percentiles.Count - 1];
@@ -455,14 +538,15 @@ namespace DAG_Modeler
             return result;
         }
 
-        public static PDF Get_Component_PDF_with_Interpolation(Dictionary<string, Stage> all_train_stages_data, string stage_name, int resource)
+        public static PDF Get_Component_PDF_with_Interpolation(Dictionary<string, Stage> all_train_stages_data, string stage_name, long resource)
         {
             if (all_train_stages_data[stage_name].Stage_PDF.ContainsKey(resource))
             {
+                //Console.WriteLine(stage_name + " return the pdf directly");
                 return all_train_stages_data[stage_name].Stage_PDF[resource];
             }
             else
-            {
+            {   //注意这里有资源异构的情况
                 List<long> profiled_resources = all_train_stages_data[stage_name].Stage_PDF.Keys.ToList().OrderBy(x => x).ToList();
                 for (int i = 0; i < profiled_resources.Count - 1; i++)
                 {
@@ -575,6 +659,7 @@ namespace DAG_Modeler
                 {
                     conditional_cdf.Values.Add(start);
                     conditional_cdf.Percentiles.Add((double)less_than / (less_than + greater_than) * 100);
+                    //Console.WriteLine(start + "  " + (double)less_than / (less_than + greater_than) * 100);
                 }
                 start += step;
                 if (allow_once == false)

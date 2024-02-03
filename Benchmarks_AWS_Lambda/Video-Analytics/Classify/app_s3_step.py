@@ -19,6 +19,7 @@ def delete_tmp():
           os.rmdir(os.path.join(root, name))
 
 def detect_object(index, index2, image, src_video, milli_1, milli_2, detect_prob):
+    #list_of_chunks[w], list_of_chunks[w], key, src_video, millis_list1, millis_list2, detect_prob
     detector = ObjectDetection()
     model_path = "~/models/yolo-tiny.h5"
 

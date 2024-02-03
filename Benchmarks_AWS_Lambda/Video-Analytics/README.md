@@ -21,7 +21,8 @@ This folder contains the source code of the Video Analytics application
 ./deploy_classify [S3-Bucket-Name] [Execution-role-ARN] [AWS-Account-ID]
 ```
 
-4. [Sample_Benchmarking_Video](Sample_Benchmarking_Video/): a few sample videos for benchmarking. These videos will be uploaded to the S3 bucket (`S3-Buncket-Name`) when Split is deployed.
+4. [Sample_Benchmarking_Video](Sample_Benchmarking_Video/): a few sample videos for benchmarking.
+These videos will be uploaded to the S3 bucket (`S3-Buncket-Name`) when Split is deployed.
 
 5. `deploy_application.sh`: script to deploy the entire application
 

@@ -1,4 +1,5 @@
-
+# NOTE
+Python-based ORION has been itegrated into repo _Linkage_
 # OSDI '22: Orion
 Keywords: Serverless DAGs, fusion, prewarming, VM sizes
 
